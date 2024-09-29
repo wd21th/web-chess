@@ -256,6 +256,19 @@ export class AppComponent {
       }
 
       case FigureEnum.KING: {
+
+        if (distination === 1) {
+          if (rowItem.figure?.side !== this.draggingElement.figure?.side) {
+            this.board[rowIndex][index].figure = { ...this.draggingElement.figure };
+            console.log('this.board[this.draggingElement.row][this.columns.indexOf(this.draggingElement.column)] :', this.board[this.draggingElement.row][this.columns.indexOf(this.draggingElement.column)]);
+            console.log('this.columns.indexOf(this.draggingElement.column) :', this.columns.indexOf(this.draggingElement.column));
+
+            this.board[8 - this.draggingElement.row][this.columns.indexOf(this.draggingElement.column)].figure = undefined;
+            console.log('this.board :', this.board);
+
+            this.draggingElement = null;
+          }
+        }
         break;
       }
 
