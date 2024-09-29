@@ -255,6 +255,18 @@ export class AppComponent {
         break;
       }
 
+      case FigureEnum.KING: {
+        break;
+      }
+
+      case FigureEnum.QUEEN: {
+        break;
+      }
+
+      case FigureEnum.ROOK: {
+        break;
+      }
+
       default:
         break;
     }
