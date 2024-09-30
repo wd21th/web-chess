@@ -21,13 +21,18 @@
 </div> -->
 
 <div class="board">
-  @for (row of board; track $index; let rowIndex = $index) {
+  @for (row of board; track $index; let rowIndex = $index; let lastRow = $last) {
   @for (rowItem of row; track $index) {
   <div class="board__item" [ngClass]="{'board__item-black': rowIndex % 2 ? $even : $odd, available: rowItem.available}"
     (dragover)="dragOver($event)" (drop)="dropp($event, rowItem, rowIndex, $index)">
     @if($first) {
     <div class="row-number">
       {{8-rowIndex}}
+    </div>
+    }
+    @if(lastRow) {
+    <div class="column">
+      {{columns[$index]}}
     </div>
     }
     @if(rowItem?.figure) {
