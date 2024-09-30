@@ -23,10 +23,20 @@
 <div class="board">
   @for (row of board; track $index; let rowIndex = $index) {
   @for (rowItem of row; track $index) {
-  <div class="board__item" [ngClass]="{'board__item-black': rowIndex % 2 ? $even : $odd, available: rowItem.available}" (dragover)="dragOver($event)" (drop)="dropp($event, rowItem, rowIndex, $index)">
+  <div class="board__item" [ngClass]="{'board__item-black': rowIndex % 2 ? $even : $odd, available: rowItem.available}"
+    (dragover)="dragOver($event)" (drop)="dropp($event, rowItem, rowIndex, $index)">
+    @if($first) {
+    <div class="row-number">
+      {{8-rowIndex}}
+    </div>
+    }
     @if(rowItem?.figure) {
-      <!-- [draggable]="$even" -->
-    <img [id]="rowIndex + '' + $index" (dragstart)="dragStart($event, rowItem)" [src]="'/wikipedia/'+ rowItem.figure.side + '-' + rowItem.figure.name + '.png'" alt="" srcset="" [ngStyle]="{cursor: $odd ? 'not-allowed': 'pointer'}">
+    <!-- [draggable]="$even" -->
+
+
+    <img [id]="rowIndex + '' + $index" (dragstart)="dragStart($event, rowItem)"
+      [src]="'/wikipedia/'+ rowItem.figure.side + '-' + rowItem.figure.name + '.png'" alt="" srcset=""
+      [ngStyle]="{cursor: $odd ? 'not-allowed': 'pointer'}">
     }
   </div>
   }
