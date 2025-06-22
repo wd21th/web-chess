@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { FigureEnum } from './figure.enum';
 import {
@@ -15,7 +15,7 @@ enum Side {
   BLACK = 'black',
 }
 
-const initialFigurePositions: { [key: string]: any } = {
+const initialFigurePositions: { [key: string]: { name: FigureEnum, side: Side } } = {
   a8: {
     name: FigureEnum.ROOK,
     side: Side.BLACK,
@@ -148,42 +148,59 @@ const initialFigurePositions: { [key: string]: any } = {
 
 // interface Row
 
-type Row = { figure: { name: FigureEnum, side: Side } | null } | null;
+type Row = RowItem | null;
+
+type RowItem = {
+  figure: Figure | null, field: boolean, available: boolean,
+  cellNumber: number, column: Column, row: Roww
+}
+
+type Figure = { name: FigureEnum, side: Side }
+
+type Column = { sign: string, index: number }
+
+type Roww = {
+  index: number,
+  order: number
+}
 
 @Component({
   selector: 'app-root',
   standalone: true,
   imports: [CommonModule, RouterOutlet, CdkDropList, CdkDrag],
-
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   title = 'checkmate';
   countOfCells: number = 64;
   columns: string[] = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
   // board: Row[][] = []
   board: any[][] = []
   draggingElement: any = null;
+  dragEl: any = null;
 
-  constructor() {
+  ngOnInit(): void {
     for (let i = 0; i < this.columns.length; i++) {
       const row = [];
       for (let j = 0; j < this.columns.length; j++) {
         row.push({
-          column: this.columns[j],
-          row: this.columns.length - i,
+          column: {
+            sign: this.columns[j],
+            index: j
+          },
+          row: {
+            index: i,
+            order: this.columns.length - i
+          },
           figure: initialFigurePositions[this.columns[j].toLowerCase() + (this.columns.length - i)],
           available: false,
-          field: i % 2 ? j % 2 === 1 : j % 2 === 0
+          field: i % 2 ? j % 2 === 1 : j % 2 === 0,
+          cellNumber: (i * 8) + (j + 1)
         })
       }
       this.board.push(row);
     }
-    console.log('this.board :', this.board);
-    /* setTimeout(() => {
-      this.board[0][0].figure = null;
-    }, 2000); */
   }
 
   dragOver(event: DragEvent): void {
@@ -192,32 +209,106 @@ export class AppComponent {
     event.preventDefault();
   }
 
-  dragStart(event: DragEvent, rowItem: any): void {
-    // console.log('DRAG  :', event);
+  dragStart(event: DragEvent, rowItem: RowItem): void {
     this.draggingElement = rowItem;
+
+    switch (rowItem.figure?.name) {
+      case FigureEnum.PAWN: {
+        this.board[rowItem.row.index - 1][rowItem.column.index].available = true;
+        this.board[rowItem.row.index - 2][rowItem.column.index].available = true;
+        break;
+      }
+
+      case FigureEnum.ROOK: {
+        for (let j = 1; rowItem.row.index >= j; j++) {
+          this.board[rowItem.row.index - j][rowItem.column.index].available = true;
+        }
+
+        for (let j = 1; j < 8; j++) {
+          console.log('rowItem.row.index :', rowItem.row.index);
+          console.log('rowItem.column.index + j :', rowItem.column.index + j);
+          this.board[rowItem.row.index][rowItem.column.index + j].available = true;
+        }
+
+        break;
+      }
+
+      case FigureEnum.BISHOP: {
+        console.log('rowItem :', rowItem);
+        const rows = []
+        for (let i = 0; rowItem.row.index > i; i++) {
+          // console.log('i :', i);
+          // rows.push(i)
+        }
+
+        const columns = [];
+        for (let j = 0; rowItem.column.index > j; j++) {
+          // console.log()
+
+          rows.push(rowItem.row.index - (j + 1))
+          columns.push(j)
+
+        }
+        console.log('rows :', rows);
+        console.log('columns :', columns);
+
+        columns.reverse().forEach((column, index) => {
+          this.board[rowItem.row.index - (index + 1)][column].available = true;
+        });
+
+
+        break;
+      }
+
+      case FigureEnum.KNIGHT: {
+        this.board[rowItem.row.index - 2][rowItem.column.index - 1].available = true;
+        this.board[rowItem.row.index - 2][rowItem.column.index + 1].available = true;
+        this.board[rowItem.row.index - 1][rowItem.column.index + 2].available = true;
+        break;
+      }
+
+      case FigureEnum.QUEEN: {
+        
+        break;
+      }
+
+      case FigureEnum.KING: {
+        console.log('this.board :', this.board);
+        this.board[rowItem.row.index - 1][rowItem.column.index].available = true;
+        this.board[rowItem.row.index - 1][rowItem.column.index - 1].available = true;
+        this.board[rowItem.row.index - 1][rowItem.column.index + 1].available = true;
+        this.board[rowItem.row.index][rowItem.column.index - 1].available = true;
+        this.board[rowItem.row.index][rowItem.column.index + 1].available = true;
+        break;
+      }
+
+      default:
+        break;
+    }
+
     event.dataTransfer!.setData('id', (event.target as any).id)
     // console.log('(event.target as any).id :', (event.target as any).id);
   }
 
-  dropp(event: DragEvent, rowItem: any, rowIndex: number, index: any): void {
+  dropp(event: DragEvent, rowItem: RowItem, rowIndex: number, index: any): void {
     console.log('rowItem :', rowItem);
     console.log('DROP :', event);
     // rowItem = this.draggingElement;
     console.log('this.draggingElement :', this.draggingElement);
-    const distination = Math.abs(this.draggingElement.row - rowItem.row);
+
+    console.log('this.draggingElement.row :', this.draggingElement.row);
+    // console.log('rowItem.row :', rowItem.row);
+    const distination = Math.abs(this.draggingElement.row - rowItem.row.index);
+    // let distination = this.draggingElement.row - rowItem.row;
     console.log('distination :', distination);
 
     switch (this.draggingElement.figure?.name) {
       case FigureEnum.PAWN:
-
-        if (distination < 3) {
+        if (distination < 3 && this.draggingElement.figure.side === Side.WHITE ? rowItem.row > this.draggingElement.row : rowItem.row < this.draggingElement.row) {
           if (rowItem.figure?.side !== this.draggingElement.figure?.side) {
             this.board[rowIndex][index].figure = { ...this.draggingElement.figure };
-            console.log('this.board[this.draggingElement.row][this.columns.indexOf(this.draggingElement.column)] :', this.board[this.draggingElement.row][this.columns.indexOf(this.draggingElement.column)]);
-            console.log('this.columns.indexOf(this.draggingElement.column) :', this.columns.indexOf(this.draggingElement.column));
 
             this.board[8 - this.draggingElement.row][this.columns.indexOf(this.draggingElement.column)].figure = undefined;
-            console.log('this.board :', this.board);
 
             this.draggingElement = null;
           }
@@ -225,14 +316,11 @@ export class AppComponent {
         break;
 
       case FigureEnum.KNIGHT:
-        if ([1,2].includes(distination) && rowItem.field !== this.draggingElement.field) {
+        if ([1, 2].includes(distination) && rowItem.field !== this.draggingElement.field) {
           if (rowItem.figure?.side !== this.draggingElement.figure?.side) {
             this.board[rowIndex][index].figure = { ...this.draggingElement.figure };
-            console.log('this.board[this.draggingElement.row][this.columns.indexOf(this.draggingElement.column)] :', this.board[this.draggingElement.row][this.columns.indexOf(this.draggingElement.column)]);
-            console.log('this.columns.indexOf(this.draggingElement.column) :', this.columns.indexOf(this.draggingElement.column));
 
             this.board[8 - this.draggingElement.row][this.columns.indexOf(this.draggingElement.column)].figure = undefined;
-            console.log('this.board :', this.board);
 
             this.draggingElement = null;
           }
@@ -243,11 +331,8 @@ export class AppComponent {
         if (rowItem.field === this.draggingElement.field) {
           if (rowItem.figure?.side !== this.draggingElement.figure?.side) {
             this.board[rowIndex][index].figure = { ...this.draggingElement.figure };
-            console.log('this.board[this.draggingElement.row][this.columns.indexOf(this.draggingElement.column)] :', this.board[this.draggingElement.row][this.columns.indexOf(this.draggingElement.column)]);
-            console.log('this.columns.indexOf(this.draggingElement.column) :', this.columns.indexOf(this.draggingElement.column));
 
             this.board[8 - this.draggingElement.row][this.columns.indexOf(this.draggingElement.column)].figure = undefined;
-            console.log('this.board :', this.board);
 
             this.draggingElement = null;
           }
@@ -256,15 +341,11 @@ export class AppComponent {
       }
 
       case FigureEnum.KING: {
-
         if (distination === 1) {
           if (rowItem.figure?.side !== this.draggingElement.figure?.side) {
             this.board[rowIndex][index].figure = { ...this.draggingElement.figure };
-            console.log('this.board[this.draggingElement.row][this.columns.indexOf(this.draggingElement.column)] :', this.board[this.draggingElement.row][this.columns.indexOf(this.draggingElement.column)]);
-            console.log('this.columns.indexOf(this.draggingElement.column) :', this.columns.indexOf(this.draggingElement.column));
 
             this.board[8 - this.draggingElement.row][this.columns.indexOf(this.draggingElement.column)].figure = undefined;
-            console.log('this.board :', this.board);
 
             this.draggingElement = null;
           }
@@ -273,10 +354,24 @@ export class AppComponent {
       }
 
       case FigureEnum.QUEEN: {
+        if ((rowItem.column === this.draggingElement.column) || (rowItem.row === this.draggingElement.row) || rowItem.field === this.draggingElement.field) {
+          this.board[rowIndex][index].figure = { ...this.draggingElement.figure };
+
+          this.board[8 - this.draggingElement.row][this.columns.indexOf(this.draggingElement.column)].figure = undefined;
+
+          this.draggingElement = null;
+        }
         break;
       }
 
       case FigureEnum.ROOK: {
+        if ((rowItem.column === this.draggingElement.column) || (rowItem.row === this.draggingElement.row)) {
+          this.board[rowIndex][index].figure = { ...this.draggingElement.figure };
+
+          this.board[8 - this.draggingElement.row][this.columns.indexOf(this.draggingElement.column)].figure = undefined;
+
+          this.draggingElement = null;
+        }
         break;
       }
 
@@ -288,6 +383,13 @@ export class AppComponent {
     let itemId = event.dataTransfer!.getData('id')
     console.log('event.dataTransfer :', event.dataTransfer);
     console.log('itemId :', itemId);
+
+    this.board.forEach(row => {
+      row.forEach(rowItem => {
+        rowItem.available = false;
+      });
+    });
+
 
     // if ((event.target as any).tagName === 'IMG') {
     //   console.log('(event.target as any).parentElement.children :', (event.target as any).parentElement.children);
@@ -307,15 +409,8 @@ export class AppComponent {
     // }
   }
 
-  all = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-  even = [10];
-
-
-
-
-
   // drop(event: CdkDragDrop<number[]>) {
-  drop(event: CdkDragDrop<any[]>) {
+  drop(event: CdkDragDrop<number[]>) {
     console.log('event :', event);
     if (event.previousContainer === event.container) {
       moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
